@@ -24,7 +24,7 @@ Herramienta de línea de comandos para facilitar la configuración de microservi
           enabled: false
     ```
 
-- Te muestra los pasos y cambios visualmente en español, con íconos ✅ y ❌, y al final te pide confirmación para aplicar los cambios.
+- Te muestra los pasos y cambios visualmente, y al final te pide confirmación para aplicar los cambios.
 
 ---
 
