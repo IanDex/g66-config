@@ -1,0 +1,27 @@
+{
+  "name": "g66-config",
+  "version": "1.0.0",
+  "description": "CLI para sincronizar archivos de configuración por entorno en microservicios de Global66",
+  "main": "src/index.ts",
+  "bin": {
+    "g66-config": "./bin/g66-config.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node ./bin/g66-config.js"
+  },
+  "author": "Global66 Tools",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^11.1.0",
+    "inquirer": "^9.2.15",
+    "simple-git": "^3.20.0"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.9",
+    "@types/node": "^24.3.1",
+    "typescript": "^5.3.3"
+  }
+
+}
