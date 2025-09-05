@@ -160,3 +160,10 @@ g66-config/
 ## 📜 Licencia
 
 MIT – Global66 Internal Tooling.
+
+---
+
+## 🧑‍💻 Autor
+
+**Crisis / Equipo de Desarrollo Global66**  
+Construido con 💙 para mejorar el flujo DevLocal en microservicios
