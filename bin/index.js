@@ -1,21 +1,25 @@
-#!/usr/bin/env node
 "use strict";
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const commander_1 = require("commander");
+const inquirer_1 = __importDefault(require("inquirer"));
+const chalk_1 = __importDefault(require("chalk"));
 const config_1 = require("./config");
 const detect_1 = require("./detect");
 const sync_1 = require("./sync");
-const inquirer_1 = __importDefault(require("inquirer"));
-const chalk_1 = __importDefault(require("chalk"));
+const revert_1 = require("./commands/revert");
+const ship_1 = require("./commands/ship");
 const program = new commander_1.Command();
 program
-    .name("g66-config")
-    .description("Sincroniza archivos de configuración para microservicios Global66")
+    .name("g66")
+    .description("🛠️ CLI de herramientas para microservicios Global66")
     .version("1.0.0");
-program.action(async () => {
+program
+    .command("config")
+    .description("⚙️  Sincroniza archivos de configuración de entorno")
+    .action(async () => {
     const cwd = process.cwd();
     const { serviceName, env, branch, baseBranch } = await (0, detect_1.detectServiceInfo)(cwd);
     console.log(chalk_1.default.blue(`\n📍 Microservicio detectado: ${serviceName}`));
@@ -44,4 +48,12 @@ program.action(async () => {
     await (0, sync_1.syncConfigFile)({ configRepoPath, serviceName, env, cwd });
     console.log(chalk_1.default.green("\n🎉 ¡Archivo sincronizado correctamente!\n"));
 });
+program
+    .command("revert")
+    .description("🔄 Revertir el archivo application.yml a su versión original del repositorio")
+    .action(revert_1.revertConfig);
+program
+    .command("ship")
+    .description("🚢 Revertir configuración, aplicar spotless, commit y push en un solo paso")
+    .action(ship_1.ship);
 program.parse(process.argv);

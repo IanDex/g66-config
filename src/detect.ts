@@ -1,4 +1,4 @@
-import simpleGit, { SimpleGit } from "simple-git";
+import simpleGit from "simple-git";
 import path from "path";
 
 type Env = "dev" | "ci";
@@ -15,7 +15,21 @@ export async function detectServiceInfo(cwd: string): Promise<ServiceInfo> {
   const serviceName = serviceDirName.replace(/^ms-/, ""); // ej: company
 
   const git = simpleGit({ baseDir: cwd });
-  const branch = (await git.revparse(["--abbrev-ref", "HEAD"])).trim();
+
+  let branch: string;
+
+  try {
+    branch = (await git.revparse(["--abbrev-ref", "HEAD"])).trim();
+  } catch (error: any) {
+    if (error.message.includes("not a git repository")) {
+      console.error("\n🚫 Este directorio no es un repositorio Git válido.");
+      console.error("🔁 Por favor, ejecuta este comando dentro de un microservicio con control de versiones (Git).\n");
+      process.exit(1);
+    } else {
+      console.error("\n❌ Error inesperado al detectar la rama de Git:", error.message);
+      process.exit(1);
+    }
+  }
 
   // 💡 Determinar entorno basado en el nombre de la rama
   let env: Env = "ci";
@@ -34,7 +48,6 @@ export async function detectServiceInfo(cwd: string): Promise<ServiceInfo> {
     env = "ci";
     baseBranch = "master";
   }
-
 
   return {
     serviceName,
