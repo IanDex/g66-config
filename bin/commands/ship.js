@@ -24,7 +24,7 @@ async function ship() {
     ]);
     try {
         console.log(chalk_1.default.yellow("\n🚀 Revirtiendo cambios en el archivo de configuración..."));
-        (0, child_process_1.execSync)("g66 config revert", { stdio: "inherit" });
+        (0, child_process_1.execSync)("g66 revert", { stdio: "inherit" });
         console.log(chalk_1.default.yellow("\n🧹 Ejecutando spotless..."));
         (0, child_process_1.execSync)("mvn spotless:apply", { stdio: "inherit" });
         console.log(chalk_1.default.yellow("\n📦 Haciendo commit..."));

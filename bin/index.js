@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+// imports existentes
 const commander_1 = require("commander");
 const inquirer_1 = __importDefault(require("inquirer"));
 const chalk_1 = __importDefault(require("chalk"));
@@ -11,11 +12,18 @@ const detect_1 = require("./detect");
 const sync_1 = require("./sync");
 const revert_1 = require("./commands/revert");
 const ship_1 = require("./commands/ship");
+const init_1 = require("./commands/init");
+// 🔽 NUEVO
+const pr_1 = __importDefault(require("./commands/pr"));
 const program = new commander_1.Command();
 program
     .name("g66")
     .description("🛠️ CLI de herramientas para microservicios Global66")
     .version("1.0.0");
+program
+    .command("init")
+    .description("🛠️ Configurar nombre del desarrollador y preferencias globales")
+    .action(init_1.runInit);
 program
     .command("config")
     .description("⚙️  Sincroniza archivos de configuración de entorno")
@@ -56,4 +64,6 @@ program
     .command("ship")
     .description("🚢 Revertir configuración, aplicar spotless, commit y push en un solo paso")
     .action(ship_1.ship);
+// 🔽 NUEVO
+program.addCommand(pr_1.default);
 program.parse(process.argv);

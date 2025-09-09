@@ -20,7 +20,7 @@ export async function ship() {
 
   try {
     console.log(chalk.yellow("\n🚀 Revirtiendo cambios en el archivo de configuración..."));
-    execSync("g66 config revert", { stdio: "inherit" });
+    execSync("g66 revert", { stdio: "inherit" });
 
     console.log(chalk.yellow("\n🧹 Ejecutando spotless..."));
     execSync("mvn spotless:apply", { stdio: "inherit" });

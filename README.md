@@ -14,7 +14,7 @@ Herramienta de línea de comandos para facilitar la configuración y el flujo de
   - Reemplazo de `lb-dev-private.global66.com` → `lb-dev.global66.com`
   - Reemplazo de `lb-ci-private.global66.com` → `lb-ci.global66.com`
   - Limpieza de tokens `{cipher}...`
-  - Agregar esta propiedad al inicio del archivo:
+  - Agrega esta propiedad al inicio del archivo:
 
     ```yaml
     spring:
@@ -24,6 +24,7 @@ Herramienta de línea de comandos para facilitar la configuración y el flujo de
     ```
 - Comando para revertir (`revert`) el archivo al original del repo.
 - Comando para comitear en un solo paso (`ship`) con `spotless`, `git add`, `commit` y `push`.
+- Creación de Pull Requests automatizada (`pr`) usando AWS CodeCommit.
 - Errores controlados si no estás en un repositorio Git.
 
 ---
@@ -114,6 +115,28 @@ Este comando:
 
 ---
 
+### 📤 Crear Pull Request
+
+```bash
+g66 pr
+```
+
+Este comando:
+
+- Detecta entorno, rama actual y base.
+- Verifica que la rama esté pusheada y tenga commits nuevos.
+- Solicita:
+  - Historia de Jira (HU-123)
+  - Título del PR
+  - Descripción en formato Markdown
+  - (Opcional) Bloque Liquibase
+  - (Opcional) Fragmento de propiedades YAML
+- Construye el PR con plantilla estándar
+- Crea el PR en AWS CodeCommit
+- Abre automáticamente el navegador en la URL del PR
+
+---
+
 ## ❗ Manejo de errores
 
 - Si ejecutas `g66` fuera de un repositorio Git, verás:
@@ -124,15 +147,18 @@ Este comando:
 
 - Si no se encuentra el archivo original, se cancela la operación con un mensaje adecuado.
 - Si no existe la ruta a `ms-config-properties`, se solicita ingresar nuevamente.
+- Si no hay commits nuevos, el comando `g66 pr` se cancela.
 
 ---
 
 ## 🎛️ Subcomandos disponibles
 
 ```bash
+g66 init        # Configura tu nombre y preferencias locales
 g66 config      # Sincroniza el archivo de configuración
 g66 revert      # Revierte el archivo application-{env}.yml al original
 g66 ship        # Revert + spotless + git commit + push
+g66 pr          # Crea un Pull Request en AWS CodeCommit
 g66 -v, --version
 ```
 

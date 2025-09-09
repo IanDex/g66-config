@@ -1,3 +1,4 @@
+// imports existentes
 import { Command } from "commander";
 import inquirer from "inquirer";
 import chalk from "chalk";
@@ -6,6 +7,10 @@ import { detectServiceInfo } from "./detect";
 import { syncConfigFile } from "./sync";
 import { revertConfig } from "./commands/revert";
 import { ship } from "./commands/ship";
+import { runInit } from "./commands/init";
+
+// 🔽 NUEVO
+import pr from "./commands/pr";
 
 const program = new Command();
 
@@ -13,6 +18,11 @@ program
   .name("g66")
   .description("🛠️ CLI de herramientas para microservicios Global66")
   .version("1.0.0");
+
+program
+  .command("init")
+  .description("🛠️ Configurar nombre del desarrollador y preferencias globales")
+  .action(runInit);
 
 program
   .command("config")
@@ -62,5 +72,8 @@ program
   .command("ship")
   .description("🚢 Revertir configuración, aplicar spotless, commit y push en un solo paso")
   .action(ship);
+
+// 🔽 NUEVO
+program.addCommand(pr);
 
 program.parse(process.argv);
