@@ -14,7 +14,14 @@ Herramienta de línea de comandos para facilitar la configuración y el flujo de
   - Reemplazo de `lb-dev-private.global66.com` → `lb-dev.global66.com`
   - Reemplazo de `lb-ci-private.global66.com` → `lb-ci.global66.com`
   - Limpieza de tokens `{cipher}...`
-  - Inserción de la propiedad `spring.cloud.config.enabled: false` al inicio del archivo
+  - Agregar esta propiedad al inicio del archivo:
+
+    ```yaml
+    spring:
+      cloud:
+        config:
+          enabled: false
+    ```
 - Comando para revertir (`revert`) el archivo al original del repo.
 - Comando para comitear en un solo paso (`ship`) con `spotless`, `git add`, `commit` y `push`.
 - Errores controlados si no estás en un repositorio Git.
@@ -48,12 +55,7 @@ src/
 En el repo `ms-config-properties`:
 
 ```
-ms-config-properties/
-├── application-dev.yml
-├── application-ci.yml
-├── ms-company/
-│   ├── application-dev.yml
-│   └── application-ci.yml
+ms-config-properties
 ...
 ```
 
