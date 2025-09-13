@@ -40,7 +40,7 @@ Herramienta de línea de comandos para facilitar la configuración, automatizar 
 > ⚠️ Si instalaste previamente la versión **1.0.0** con `npm link`, debes **desvincularla** antes de instalar esta nueva:
 
 ```bash
-npm unlink -g g66
+npm unlink -g g66-config
 ```
 
 Instalación limpia:
