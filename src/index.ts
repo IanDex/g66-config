@@ -8,6 +8,8 @@ import { syncConfigFile } from "./sync";
 import { revertConfig } from "./commands/revert";
 import { ship } from "./commands/ship";
 import { runInit } from "./commands/init";
+import wl from "./commands/wl";
+
 
 // 🔽 NUEVO
 import pr from "./commands/pr";
@@ -27,7 +29,8 @@ program
 program
   .command("config")
   .description("⚙️  Sincroniza archivos de configuración de entorno")
-  .action(async () => {
+  .option("-p, --port <port>", "Sobrescribir port: 8080 si existe", parseInt)
+  .action(async ({ port }) => {
     const cwd = process.cwd();
     const { serviceName, env, branch, baseBranch } = await detectServiceInfo(cwd);
 
@@ -44,6 +47,9 @@ program
     console.log(chalk.yellow(`\n🔧 El archivo será modificado:`));
     console.log("   • Reemplazo de lb-*-private → lb-*");
     console.log("   • Eliminación de token cifrado `{cipher}`");
+    if (port) {
+      console.log(`   • Reemplazo de 'port: 8080' → 'port: ${port}'`);
+    }
 
     const { confirmed } = await inquirer.prompt([
       {
@@ -59,9 +65,10 @@ program
       return;
     }
 
-    await syncConfigFile({ configRepoPath, serviceName, env, cwd });
+    await syncConfigFile({ configRepoPath, serviceName, env, cwd, serverPort: port });
     console.log(chalk.green("\n🎉 ¡Archivo sincronizado correctamente!\n"));
   });
+
 
 program
   .command("revert")
@@ -75,5 +82,6 @@ program
 
 // 🔽 NUEVO
 program.addCommand(pr);
+program.addCommand(wl);
 
 program.parse(process.argv);

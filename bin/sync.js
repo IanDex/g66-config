@@ -7,7 +7,7 @@ exports.syncConfigFile = syncConfigFile;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const child_process_1 = require("child_process");
-function transformYamlContent(content) {
+function transformYamlContent(content, opts) {
     // Reemplazo de lb-<env>-private → lb-<env>
     content = content.replace(/https:\/\/lb-ci-private\.global66\.com/g, "https://lb-ci.global66.com");
     content = content.replace(/https:\/\/lb-dev-private\.global66\.com/g, "https://lb-dev.global66.com");
@@ -17,19 +17,24 @@ function transformYamlContent(content) {
     const springConfigBlock = "spring:\n  cloud:\n    config:\n      enabled: false\n\n";
     // Si ya existe 'spring:', insertamos solo el bloque cloud.config.enabled
     if (content.includes("spring:")) {
-        // Ya hay una definición de spring, agregamos solo el bloque cloud.config si no existe
-        if (!content.includes("cloud:") || !content.includes("config:")) {
-            content = content.replace(/spring:\s*/g, `spring:\n  cloud:\n    config:\n      enabled: false\n  `);
-        }
+        content = content.replace(/spring:\s*/g, `spring:\n  cloud:\n    config:\n      enabled: false\n  `);
         // Si ya existe toda la estructura, no hacemos nada
     }
     else {
         // Insertar todo el bloque spring al inicio
         content = springConfigBlock + content;
     }
+    // ✅ Reemplazo condicional de `port: 8080`
+    if (opts?.serverPort) {
+        const before = content;
+        content = content.replace(/^(\s*)port:\s*8080\s*$/m, `$1port: ${opts.serverPort}`);
+        if (before === content) {
+            console.warn(`⚠️  No se encontró 'port: 8080'. No se aplicó ningún cambio de puerto.`);
+        }
+    }
     return content;
 }
-async function syncConfigFile({ configRepoPath, serviceName, env, cwd }) {
+async function syncConfigFile({ configRepoPath, serviceName, env, cwd, serverPort }) {
     const branch = env === "dev" ? "development" : "master";
     const fileName = `${serviceName}.yml`;
     const sourceFile = path_1.default.join(configRepoPath, fileName);
@@ -42,7 +47,7 @@ async function syncConfigFile({ configRepoPath, serviceName, env, cwd }) {
     (0, child_process_1.execSync)(`git pull`, { cwd: configRepoPath, stdio: "inherit" });
     // Leer contenido y transformar
     const rawContent = fs_1.default.readFileSync(sourceFile, "utf-8");
-    const transformed = transformYamlContent(rawContent);
+    const transformed = transformYamlContent(rawContent, { serverPort });
     // Guardar archivo final
     fs_1.default.writeFileSync(targetFile, transformed, "utf-8");
 }

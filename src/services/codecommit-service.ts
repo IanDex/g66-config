@@ -44,11 +44,26 @@ export async function createPullRequest(options: CreatePrOptions): Promise<void>
     return;
   }
 
-  const prUrl = `https://console.aws.amazon.com/codesuite/codecommit/repositories/${repositoryName}/pull-requests/${prId}?region=us-east-1`;
+  const prUrl = `https://console.aws.amazon.com/codesuite/codecommit/repositories/${repositoryName}/pull-requests/${prId}/changes?region=us-east-1`;
 
   console.log(`\n✅ Pull Request creado con éxito:`);
   console.log(prUrl);
 
   // Abrir el navegador automáticamente
   await open(prUrl);
+}
+
+export async function createSimplePullRequest(
+  repositoryName: string,
+  sourceBranch: string,
+  destinationBranch: string,
+  title: string
+): Promise<void> {
+  return createPullRequest({
+    repositoryName,
+    sourceBranch,
+    destinationBranch,
+    title,
+    description: "", // sin descripción
+  });
 }

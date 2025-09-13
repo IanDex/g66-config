@@ -13,6 +13,7 @@ const sync_1 = require("./sync");
 const revert_1 = require("./commands/revert");
 const ship_1 = require("./commands/ship");
 const init_1 = require("./commands/init");
+const wl_1 = __importDefault(require("./commands/wl"));
 // 🔽 NUEVO
 const pr_1 = __importDefault(require("./commands/pr"));
 const program = new commander_1.Command();
@@ -27,7 +28,8 @@ program
 program
     .command("config")
     .description("⚙️  Sincroniza archivos de configuración de entorno")
-    .action(async () => {
+    .option("-p, --port <port>", "Sobrescribir port: 8080 si existe", parseInt)
+    .action(async ({ port }) => {
     const cwd = process.cwd();
     const { serviceName, env, branch, baseBranch } = await (0, detect_1.detectServiceInfo)(cwd);
     console.log(chalk_1.default.blue(`\n📍 Microservicio detectado: ${serviceName}`));
@@ -41,6 +43,9 @@ program
     console.log(chalk_1.default.yellow(`\n🔧 El archivo será modificado:`));
     console.log("   • Reemplazo de lb-*-private → lb-*");
     console.log("   • Eliminación de token cifrado `{cipher}`");
+    if (port) {
+        console.log(`   • Reemplazo de 'port: 8080' → 'port: ${port}'`);
+    }
     const { confirmed } = await inquirer_1.default.prompt([
         {
             type: "confirm",
@@ -53,7 +58,7 @@ program
         console.log(chalk_1.default.gray("🚫 Operación cancelada por el usuario."));
         return;
     }
-    await (0, sync_1.syncConfigFile)({ configRepoPath, serviceName, env, cwd });
+    await (0, sync_1.syncConfigFile)({ configRepoPath, serviceName, env, cwd, serverPort: port });
     console.log(chalk_1.default.green("\n🎉 ¡Archivo sincronizado correctamente!\n"));
 });
 program
@@ -66,4 +71,5 @@ program
     .action(ship_1.ship);
 // 🔽 NUEVO
 program.addCommand(pr_1.default);
+program.addCommand(wl_1.default);
 program.parse(process.argv);
