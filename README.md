@@ -126,7 +126,21 @@ El CLI usa un archivo de configuración en `~/.g66-config.json`. Ejemplo:
 g66 config
 ```
 
-Detecta automáticamente el entorno (`dev`, `ci`) y muestra:
+Este comando detecta automáticamente el entorno (`dev`, `ci`, `prod`) a partir de la rama actual de Git y realiza la sincronización del archivo de configuración YAML correspondiente al microservicio en el que estás.
+
+Además, puedes especificar un **puerto local del microservicio** para que el archivo YAML generado lo incluya, usando:
+
+```bash
+g66 config -p <puerto>
+```
+
+Por ejemplo:
+
+```bash
+g66 config -p 8888
+```
+
+#### 🧾 Ejemplo de salida:
 
 ```
 📍 Microservicio detectado: company
@@ -139,15 +153,17 @@ Detecta automáticamente el entorno (`dev`, `ci`) y muestra:
 🔧 El archivo será modificado:
    • Reemplazo de lb-*-private → lb-*
    • Eliminación de token cifrado `{cipher}`
+   • Puerto local ajustado a 8888
 ✅ ¿Deseas aplicar esta configuración ahora?
 ```
 
----
+✅ Al confirmar, el CLI copia y ajusta el archivo YAML desde `ms-config-properties`, aplicando transformaciones automáticas según el entorno.
 
-### 🔄 Revertir archivo
+
+### 🔄 Revertir archivo (BETA)
 
 ```bash
-g66 revert
+g66 revert 
 ```
 
 Restaura el archivo de configuración actual (`application-{env}.yml`) desde `ms-config-properties`.
