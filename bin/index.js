@@ -17,6 +17,7 @@ const wl_1 = __importDefault(require("./commands/wl"));
 // 🔽 NUEVO
 const pr_1 = __importDefault(require("./commands/pr"));
 const promote_1 = __importDefault(require("./commands/promote"));
+const sync_envs_1 = __importDefault(require("./commands/sync-envs"));
 const program = new commander_1.Command();
 program
     .name("g66")
@@ -73,5 +74,6 @@ program
 // 🔽 NUEVO
 program.addCommand(pr_1.default);
 program.addCommand(promote_1.default);
+program.addCommand(sync_envs_1.default);
 program.addCommand(wl_1.default);
 program.parse(process.argv);
