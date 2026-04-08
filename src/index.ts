@@ -13,6 +13,7 @@ import wl from "./commands/wl";
 
 // 🔽 NUEVO
 import pr from "./commands/pr";
+import promote from "./commands/promote";
 
 const program = new Command();
 
@@ -82,6 +83,7 @@ program
 
 // 🔽 NUEVO
 program.addCommand(pr);
+program.addCommand(promote);
 program.addCommand(wl);
 
 program.parse(process.argv);
