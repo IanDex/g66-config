@@ -114,6 +114,28 @@ PR en CodeCommit sin generación de IA.
 
 ---
 
+#### `g66 pr-analyze` — Verificar estado de un PR
+
+```bash
+g66 pr-analyze <id>
+```
+
+Lee un PR en CodeCommit y comprueba si sus commits ya están en `development` y `master` (CI).
+
+---
+
+#### `g66 release` — Generar release
+
+```bash
+g66 release
+g66 release --version 2.5.0   # versión explícita
+g66 release --dry-run          # solo muestra el changelog sin ejecutar
+```
+
+Genera changelog, hace bump de versión y crea PR `master → release` en CodeCommit.
+
+---
+
 ### Ambientes y homologación
 
 ---
@@ -148,6 +170,29 @@ g66 sync
 ```
 
 Excluye automáticamente: `Dockerfile`, `docker-compose*.yml`, `application-*.yml`.
+
+---
+
+#### `g66 promote` — Cherry-pick entre ramas locales
+
+```bash
+g66 promote
+g66 promote --dry-run
+```
+
+Cherry-pick de un commit puntual entre ramas locales (checkout, pull, push).
+
+---
+
+#### `g66 sync-envs` — Homologar con release via PRs
+
+```bash
+g66 sync-envs
+g66 sync-envs --only master    # solo sincroniza master
+g66 sync-envs --dry-run
+```
+
+Homologa `master` y `development` con `release` creando ramas temporales y PRs en CodeCommit.
 
 ---
 
@@ -229,6 +274,52 @@ Claude genera un resumen en español de todos los cambios de la HU y lo postea c
 
 ---
 
+#### `g66 hu` — Detalles de una HU de Jira
+
+```bash
+g66 hu AT-108
+```
+
+Muestra título, estado, asignado, puntos, PRs vinculados, subtareas y HUs relacionadas directamente en la terminal.
+
+---
+
+#### `g66 start` — Implementar HU con Claude
+
+```bash
+g66 start AT-108              # lee HU de Jira, copia prompt y lanza Claude
+g66 start AT-108 --print      # solo imprime el prompt sin lanzar Claude
+g66 start AT-108 --repo-id <id>  # fuerza el repo en ai-context
+```
+
+Lee la HU de Jira, genera un prompt de implementación con contexto del repo, lo copia al clipboard y lanza Claude Code.
+
+---
+
+#### `g66 test` — Generar tests con Claude
+
+```bash
+g66 test              # analiza clases sin cobertura, copia prompt y lanza Claude
+g66 test --print      # solo imprime el prompt
+g66 test --repo-id <id>
+```
+
+Detecta clases modificadas en la rama sin tests correspondientes, genera un prompt de cobertura y lanza Claude Code.
+
+---
+
+#### `g66 liquibase` — Generar changeset con Claude
+
+```bash
+g66 liquibase                 # detecta entidades JPA cambiadas, lanza Claude
+g66 liquibase --hu AT-108     # fuerza el código de HU
+g66 liquibase --print         # solo imprime el prompt
+```
+
+Alternativa interactiva a `g66 migrate`: analiza cambios en `@Entity` del diff, genera el changeset Liquibase completo via Claude y lo guarda en `db/migrations/`.
+
+---
+
 #### `g66 pr-review` — Revisión de PR con IA
 
 ```bash
@@ -263,6 +354,22 @@ Gestión de IPs en whitelist del microservicio.
 
 ---
 
+#### `g66 token` — Obtener idToken B2B desde Cognito
+
+```bash
+g66 token                            # flujo interactivo: env → KYC → país → compañía → usuario → copia token
+g66 token --env dev --country CO     # filtra por país
+g66 token --env dev --company-id 123 # selecciona usuario de esa compañía
+g66 token --env dev --email user@mail.com  # directo por email
+g66 token --find user@mail.com       # busca usuario por email y hace login
+g66 token --decode                   # muestra JWT claims decodificados
+g66 token --no-copy                  # no copia al clipboard
+```
+
+El token queda copiado al clipboard automáticamente.
+
+---
+
 #### `g66 company` — Vista completa de una compañía
 
 ```bash
@@ -271,6 +378,17 @@ g66 company --env dev --id 123           # directo
 g66 company --env dev --id 123 --login   # muestra info + selecciona usuario + hace login
 g66 company --env dev --id 123 --login --decode  # + decodifica JWT claims
 ```
+
+---
+
+#### `g66 status` — Pipeline de onboarding de usuario y empresa
+
+```bash
+g66 status                           # flujo interactivo: env → email
+g66 status --env dev --email u@x.com # directo
+```
+
+Ejecuta el pipeline completo de onboarding: valida el usuario, su empresa y el estado de todos los pasos (KYC, Cognito, base de datos).
 
 ---
 
@@ -287,6 +405,19 @@ g66 tokens --clear       # limpiar historial
 ```
 
 Muestra tabla: comando | llamadas | tokens entrada | tokens salida | total.
+
+---
+
+#### `g66 setup` — Generar config de logi
+
+```bash
+g66 setup                              # lee credenciales de ms-config-properties
+g66 setup --service business-api       # servicio específico (default: company)
+g66 setup --repo /ruta/ms-config-properties
+g66 setup --dry-run                    # muestra config sin escribir
+```
+
+Lee credenciales de `ms-config-properties` y genera el archivo `config.py` que usa `g66 token` internamente.
 
 ---
 
