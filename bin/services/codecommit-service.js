@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createPullRequest = createPullRequest;
 exports.createSimplePullRequest = createSimplePullRequest;
+exports.getPullRequestDetails = getPullRequestDetails;
 const client_codecommit_1 = require("@aws-sdk/client-codecommit");
 const open_1 = __importDefault(require("open"));
 const client = new client_codecommit_1.CodeCommitClient({ region: 'us-east-1' });
@@ -47,4 +48,32 @@ async function createSimplePullRequest(repositoryName, sourceBranch, destination
         title,
         description: "", // sin descripción
     });
+}
+async function getPullRequestDetails(pullRequestId) {
+    const command = new client_codecommit_1.GetPullRequestCommand({ pullRequestId });
+    let result;
+    try {
+        result = await client.send(command);
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        throw new Error(`No se pudo leer el PR en CodeCommit: ${msg}`);
+    }
+    const pr = result.pullRequest;
+    if (!pr?.pullRequestId) {
+        throw new Error("Respuesta de CodeCommit sin datos del PR.");
+    }
+    const targets = (pr.pullRequestTargets ?? []).map((t) => ({
+        repositoryName: t.repositoryName ?? "",
+        sourceReference: t.sourceReference ?? "",
+        destinationReference: t.destinationReference ?? "",
+        sourceCommit: t.sourceCommit ?? "",
+        destinationCommit: t.destinationCommit ?? "",
+    }));
+    return {
+        pullRequestId: pr.pullRequestId,
+        title: pr.title ?? "",
+        status: pr.pullRequestStatus ?? "",
+        targets,
+    };
 }

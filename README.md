@@ -1,268 +1,513 @@
-# 🛠️ g66 — CLI para sincronizar y automatizar flujos DevLocal en microservicios Global66
+# g66 CLI — Herramientas para microservicios Global66
 
-Herramienta de línea de comandos para facilitar la configuración, automatizar PRs y gestionar whitelists en microservicios de Global66. Incluye sincronización de archivos `application-{env}.yml` desde `ms-config-properties`, revertir cambios, comandos para comitear fácilmente y automatización de PRs en CodeCommit.
-
----
-
-## 🚀 ¿Qué hace esta herramienta?
-
-- Detecta en qué microservicio estás (`ms-company`, `ms-document`, etc.).
-- Detecta en qué rama Git estás y de dónde proviene (base branch: `development`, `master`, `release`).
-- Copia automáticamente el archivo de configuración (`application-dev.yml` o `application-ci.yml`) desde `ms-config-properties`.
-- Realiza un `git pull` antes de copiar para asegurar que el archivo esté actualizado.
-- Aplica modificaciones al archivo copiado:
-  - Reemplazo de `lb-dev-private.global66.com` → `lb-dev.global66.com`
-  - Reemplazo de `lb-ci-private.global66.com` → `lb-ci.global66.com`
-  - Limpieza de tokens `{cipher}...`
-  - Agrega esta propiedad al inicio del archivo:
-
-    ```yaml
-    spring:
-      cloud:
-        config:
-          enabled: false
-    ```
-- Comando para revertir (`revert`) el archivo al original del repo.
-- Comando para comitear en un solo paso (`ship`) con `spotless`, `git add`, `commit` y `push`.
-- Creación de Pull Requests automatizada (`pr`) usando AWS CodeCommit.
-- Gestión de **whitelist**:
-  - Busca un `companyId` por email en la base de datos.
-  - Lo agrega al campo `white-list.exclude.user-ids` en `auth-server.yml` de `ms-config-properties`.
-  - Genera PR automático en CodeCommit.
-- Reinicio de pipelines:
-  - Modifica el archivo `src/test/resources/application.yml` en `ms-auth-server`, alternando el valor de `connect-timeout` entre `30` ↔ `31`.
-  - Genera PR en CodeCommit para forzar reinicio del pipeline.
+CLI de productividad para el equipo de desarrollo. Automatiza el flujo completo: configuración, PRs, migraciones, propiedades, homologación entre ambientes, y tablero Slack.
 
 ---
 
-## 📦 Instalación
+## Requisitos
 
-> ⚠️ Si instalaste previamente la versión **1.0.0** con `npm link`, debes **desvincularla** antes de instalar esta nueva:
+| Herramienta | Versión mínima |
+|---|---|
+| Node.js | 18+ |
+| Python | 3.9+ |
+| `pip install requests` | — |
+| AWS CLI configurado | `aws configure` |
+| Git | 2.x |
+
+---
+
+## Instalación
 
 ```bash
-npm unlink -g g66-config
-```
-
-Instalación limpia:
-
-```bash
-git clone https://github.com/IanDex/g66-config.git
 cd g66-config
 npm install
 npm run build
-npm link
+npm link        # registra el binario globalmente
 ```
 
-Esto te permitirá usar `g66` desde cualquier terminal.
-
----
-
-## 📁 Estructura esperada
-
-```
-src/
-└── main/
-    └── resources/
-        └── application-dev.yml
-        └── application-ci.yml
-```
-
-En el repo `ms-config-properties`:
-
-```
-ms-config-properties
-...
+Verificar:
+```bash
+g66 --version
 ```
 
 ---
 
-## ⚙️ Configuración inicial
-
-El CLI usa un archivo de configuración en `~/.g66-config.json`. Ejemplo:
+## Configuración global — `~/.g66-config.json`
 
 ```json
 {
-  "configRepoPath": "/ruta/local/a/ms-config-properties",
-  "authServerRepoPath": "/ruta/local/a/ms-auth-server",
-  "port": 8888,
-  "db": {
-    "dev": {
-      "host": "host-dev",
-      "user": "usuario-dev",
-      "password": "contraseña-dev",
-      "database": "company",
-      "port": 3306
-    },
-    "ci": {
-      "host": "host-ci",
-      "user": "usuario-ci",
-      "password": "contraseña-ci",
-      "database": "company",
-      "port": 3306
-    },
-    "prod": {
-      "host": "host-prod",
-      "user": "usuario-prod",
-      "password": "contraseña-prod",
-      "database": "company",
-      "port": 3306
-    }
+  "configRepoPath": "C:/ruta/a/ms-config-properties",
+  "branch_prefix": "cv",
+  "envSync": {
+    "slackNotify": true,
+    "slackBotToken": "xoxb-...",
+    "slackChannelId": "CXXXXXXXXX",
+    "whitelist": []
+  },
+  "slack": {
+    "token": "xoxb-...",
+    "channel": "CXXXXXXXXX",
+    "dev_channel": "CXXXXXXXXX",
+    "webhook_url": "https://hooks.slack.com/triggers/...",
+    "my_user_id": "UXXXXXXXXX",
+    "excluded_users": ["UXXXXXXXXX"]
   }
 }
 ```
 
-- `configRepoPath`: ruta local al repo `ms-config-properties`.  
-- `authServerRepoPath`: ruta local al repo `ms-auth-server`.  
-- `port`: puerto para servicios locales (default `8080`, configurable con `g66 config -p 8888`).  
-- `db`: credenciales para conexión a MySQL en cada entorno (`dev`, `ci`, `prod`).  
+### Cómo obtener cada valor
+
+| Campo | Cómo obtenerlo |
+|---|---|
+| `branch_prefix` | Tus iniciales (ej: `cv`). Se pide automáticamente en `g66 nb`. |
+| `slack.token` | [api.slack.com/apps](https://api.slack.com/apps) → tu app → OAuth & Permissions → Bot Token |
+| `slack.dev_channel` | ID del canal privado de devs (empieza con C) |
+| `slack.webhook_url` | Workflow Builder → trigger "Se inicia con un webhook" → copiar URL |
+| `slack.my_user_id` | Slack → Perfil → ⋮ → "Copiar ID de miembro" (empieza con U) |
+| `slack.excluded_users` | IDs de usuarios a ocultar en `g66 slack users` |
 
 ---
 
-## 🧪 Uso
+## Comandos
 
-### 🛠️ Sincronización
+### Flujo de trabajo diario
+
+---
+
+#### `g66 nb <env> <hu>` — Crear nueva rama
+
+Crea la rama `{prefix}/{env}/{hu}` desde la rama base actualizada.
+
+```bash
+g66 nb dev AT-115
+# → git checkout development && git pull && git checkout -b cv/dev/AT-115
+
+g66 nb ci AT-115
+# → git checkout master && git pull && git checkout -b cv/ci/AT-115
+
+g66 nb prod AT-115
+# → git checkout release && git pull && git checkout -b cv/prod/AT-115
+```
+
+**Primera vez:** pide el prefijo (ej: `cv`) y lo guarda en `~/.g66-config.json`.
+
+---
+
+#### `g66 go <env>` — Checkout rápido a rama base
+
+```bash
+g66 go dev    # git checkout development
+g66 go ci     # git checkout master
+g66 go prod   # git checkout release
+```
+
+---
+
+#### `g66 undo` — Deshacer último commit
+
+```bash
+g66 undo
+# Muestra el commit que se va a deshacer
+# Pide confirmación (default: No)
+# Ejecuta: git reset --hard HEAD^
+```
+
+⚠️ Destructivo — los cambios se pierden permanentemente.
+
+---
+
+#### `g66 config` — Sincronizar application.yml
+
+Copia el archivo de configuración del repositorio de properties al proyecto local.
 
 ```bash
 g66 config
+g66 config --port 9090    # sobrescribe el puerto
 ```
 
-Este comando detecta automáticamente el entorno (`dev`, `ci`, `prod`) a partir de la rama actual de Git y realiza la sincronización del archivo de configuración YAML correspondiente al microservicio en el que estás.
-
-Además, puedes especificar un **puerto local del microservicio** para que el archivo YAML generado lo incluya, usando:
-
-```bash
-g66 config -p <puerto>
-```
-
-Por ejemplo:
-
-```bash
-g66 config -p 8888
-```
-
-#### 🧾 Ejemplo de salida:
-
-```
-📍 Microservicio detectado: company
-🌿 Rama actual: cv/dev/fix-auth-token
-🔎 Rama base inferida: development
-🌐 Entorno inferido: dev
-📄 Archivo de configuración: company.yml
-📁 Repositorio de configuración: ../Global66/ms-config-properties
-📂 Ruta destino: src/main/resources/application-dev.yml
-🔧 El archivo será modificado:
-   • Reemplazo de lb-*-private → lb-*
-   • Eliminación de token cifrado `{cipher}`
-   • Puerto local ajustado a 8888
-✅ ¿Deseas aplicar esta configuración ahora?
-```
-
-✅ Al confirmar, el CLI copia y ajusta el archivo YAML desde `ms-config-properties`, aplicando transformaciones automáticas según el entorno.
-
-
-### 🔄 Revertir archivo (BETA)
-
-```bash
-g66 revert 
-```
-
-Restaura el archivo de configuración actual (`application-{env}.yml`) desde `ms-config-properties`.
+Reemplaza automáticamente:
+- `lb-*-private` → `lb-*`
+- Elimina tokens `{cipher}`
 
 ---
 
-### 🚀 Shippear cambios
+#### `g66 ship` — Revertir + spotless + commit + push
 
 ```bash
 g66 ship
+# 1. Revierte application.yml
+# 2. Aplica spotless
+# 3. Commit y push
 ```
-
-Este comando:
-
-1. Ejecuta `g66 revert`
-2. Aplica `mvn spotless:apply`
-3. Realiza `git add .`
-4. Solicita historia de usuario y descripción
-5. Hace `git commit -m "[HU] Desc"`
-6. Realiza `git push`
 
 ---
 
-### 📤 Crear Pull Request
+### Pull Requests
+
+---
+
+#### `g66 pr-smart` — PR con IA
+
+Genera título y descripción con Claude, hace commit + push + PR en CodeCommit, actualiza Jira, sincroniza API Gateway y agrega al tablero de Slack.
+
+```bash
+g66 pr-smart                    # flujo completo
+g66 pr-smart --dry-run          # solo muestra el PR generado, sin ejecutar
+g66 pr-smart --mock             # salta commit/push/PR real (para testear flujos post-PR)
+g66 pr-smart --apigw            # sincroniza API Gateway sin preguntar
+g66 pr-smart --no-apigw-prompt  # omite la pregunta de API Gateway
+g66 pr-smart --region us-west-2 # región AWS distinta
+```
+
+**Flujo completo:**
+1. Claude analiza el diff y genera título + descripción
+2. Muestra preview — confirmar para continuar
+3. `git add` → `spotless:apply` → commit → push
+4. Crea o actualiza PR en CodeCommit
+5. Actualiza campo "PR en dev/CI/Prod" en Jira
+6. Pregunta si sincronizar API Gateway
+7. Pregunta si agregar al tablero de Slack (con assignee y comentario)
+
+**Con `--mock`:** salta los pasos 3-5, usa PR #999 fake, continúa con API Gateway y Slack.
+
+---
+
+#### `g66 pr` — PR manual
 
 ```bash
 g66 pr
 ```
 
-Este comando:
-
-- Detecta entorno, rama actual y base.
-- Verifica que la rama esté pusheada y tenga commits nuevos.
-- Solicita:
-  - Historia de Jira (HU-123)
-  - Título del PR
-  - Descripción en formato Markdown
-  - (Opcional) Bloque Liquibase
-  - (Opcional) Fragmento de propiedades YAML
-- Construye el PR con plantilla estándar.
-- Crea el PR en AWS CodeCommit.
-- Abre automáticamente el navegador en la URL del PR.
+PR en CodeCommit sin generación de IA.
 
 ---
 
-### 🔐 Agregar a whitelist y reiniciar pipeline
+### Tablero Slack
+
+---
+
+#### `g66 slack users` — Listar miembros del canal
 
 ```bash
-g66 wl --email usuario@ejemplo.com --env dev
+g66 slack users             # carga desde cache local (rápido)
+g66 slack users --refresh   # actualiza desde Slack API y guarda cache
 ```
 
-Este comando:
-
-1. Busca el `companyId` en la base de datos MySQL (`db.dev`, `db.ci`, `db.prod` según `--env`).  
-2. Agrega ese `companyId` al campo `white-list.exclude.user-ids` en `auth-server.yml` de `ms-config-properties`.  
-3. Crea PR en CodeCommit para `ms-config-properties`.  
-4. Modifica `src/test/resources/application.yml` en `ms-auth-server`, alternando `connect-timeout` entre `30` ↔ `31`.  
-5. Crea PR en CodeCommit para `ms-auth-server`, forzando reinicio de pipeline.  
+Guarda en `~/.g66-slack-members.json`. Actualizar cada viernes con `--refresh`.
 
 ---
 
-## ❗ Manejo de errores
-
-- Si ejecutas `g66` fuera de un repositorio Git:
-
-```
-❌ Este directorio no es un repositorio Git.
-```
-
-- Si no se encuentra el archivo original, la operación se cancela con un mensaje adecuado.  
-- Si no existe la ruta a `ms-config-properties` o `ms-auth-server`, se solicita ingresar nuevamente.  
-- Si no hay commits nuevos, el comando `g66 pr` o `g66 wl` se cancela.  
-
----
-
-## 🎛️ Subcomandos disponibles
+#### `g66 slack add` — Agregar item al tablero
 
 ```bash
-g66 init        # Configura tu nombre y preferencias locales
-g66 config      # Sincroniza el archivo de configuración
-g66 revert      # Revierte el archivo application-{env}.yml al original
-g66 ship        # Revert + spotless + git commit + push
-g66 pr          # Crea un Pull Request en AWS CodeCommit
-g66 wl          # Agrega companyId a whitelist y reinicia pipeline
-g66 -v, --version
+g66 slack add
+# Flujo interactivo:
+# 1. Infiere HU desde la rama actual
+# 2. Pide comentario opcional
+# 3. Muestra lista de devs para asignar (desde cache)
+# 4. Crea item en el tablero via Workflow Builder webhook
+```
+
+```bash
+g66 slack add --hu AT-115 --pr-url "https://..." --assignee-id U0XXXXXXXXX
+```
+
+**Primera vez:** si `my_user_id` no está configurado, pide el Slack user ID y lo guarda.
+
+---
+
+#### `g66 slack test` — Verificar conexión
+
+```bash
+g66 slack test
+# ✅ Conectado como b2bot (Global66)
+# Canal: #nombre-canal (CXXXXXXXXX)
 ```
 
 ---
 
-## 🛡️ Requisitos
-
-- Node.js 18+  
-- Git y Maven instalados  
-- Clonado de `ms-config-properties` y `ms-auth-server`  
-- Permisos de escritura en AWS CodeCommit  
+### Ambientes y homologación
 
 ---
 
-## 🧑‍💻 Autor
+#### `g66 env-status` — Matriz de HUs por ambiente
 
-**Crisis / Equipo de Desarrollo Global66**  
-Construido con 💙 para mejorar el flujo DevLocal en microservicios  
+```bash
+g66 env-status
+```
+
+Muestra qué HUs están en PROD / CI / DEV:
+
+```
+HU          PROD    CI      DEV
+AT-110       ok      ok      ok
+AT-108       --      ok      ok
+AT-106       --      --      ok
+```
+
+---
+
+#### `g66 sync` — Sincronizar HUs entre ambientes
+
+```bash
+g66 sync
+# 1. Muestra matriz env-status
+# 2. Seleccionar origen (dev/ci/prod)
+# 3. Seleccionar destino
+# 4. Checkbox de HUs a sincronizar
+# 5. Preview de commits
+# 6. Confirmar → cherry-pick + spotless + push directo
+```
+
+Excluye automáticamente: `Dockerfile`, `docker-compose*.yml`, `application-*.yml` (configurable en `homologIgnore`).
+
+---
+
+#### `g66 hotfix` — Cherry-pick a múltiples ambientes
+
+```bash
+g66 hotfix
+# 1. Lista los últimos 30 commits
+# 2. Checkbox para seleccionar commits
+# 3. Elegir ambientes: Todos / PROD+CI / Solo PROD
+# 4. Por cada ambiente: crea rama hotfix, cherry-pick, push, PR en CodeCommit
+# 5. Comenta URLs de PRs en Jira
+```
+
+---
+
+### Configuración del proyecto
+
+---
+
+#### `g66 props` — Sincronizar properties en ms-config-properties
+
+```bash
+g66 props
+# 1. Analiza @Value en el diff
+# 2. Dry-run: muestra properties detectadas por ambiente
+# 3. Pide valor para properties sin default
+# 4. Aplica cambios en dev/ci/prod
+# 5. Crea PRs en ms-config-properties
+# 6. Comenta en Jira (como comentario, no en campos PR en dev/CI/Prod)
+```
+
+```bash
+g66 props --values '{"clave": "valor"}'   # pasar valores explícitos
+```
+
+---
+
+#### `g66 migrate` — Generar migración Liquibase
+
+```bash
+g66 migrate
+# 1. Detecta cambios en @Entity del diff
+# 2. Muestra entidades modificadas
+# 3. Claude genera migración en formato YAML
+# 4. Preview completo del YAML
+# 5. Pide nombre de archivo (ej: 20260518_AT-110.yaml)
+# 6. Escribe en db/migrations/
+```
+
+Formato generado: `YYYYMMDD_{HU}.yaml`, IDs: `YYYYMMDD-N-AT-XXX`.
+
+---
+
+### IA y análisis
+
+---
+
+#### `g66 contract` — Generar contrato de API
+
+```bash
+g66 contract
+g66 contract --class com.global.businessapi.presentation.impl.B2bAuthController#token
+g66 contract --hu AT-110
+g66 contract --dry-run
+```
+
+Genera documentación de endpoints (método, path, headers excl. `Claim-*`, curl, request/response) y la postea como comentario en Jira.
+
+---
+
+#### `g66 summary` — Resumen ejecutivo de la HU
+
+```bash
+g66 summary
+```
+
+Claude genera un resumen en español de todos los cambios de la HU y lo postea como comentario en Jira.
+
+---
+
+#### `g66 pr-review` — Revisión de PR con IA
+
+```bash
+g66 pr-review
+```
+
+Revisión del PR contra los lineamientos G66. Genera reporte en `~/Documents/PR Reviews/`.
+
+---
+
+### Infraestructura
+
+---
+
+#### `g66 apigw` — Sincronizar API Gateway
+
+```bash
+g66 apigw
+```
+
+Detecta endpoints nuevos en Spring controllers y los sincroniza en `ms-config-api-gateway` (dev/ci/prod).
+
+---
+
+#### `g66 wl` — Whitelist de IPs
+
+```bash
+g66 wl
+```
+
+Gestión de IPs en whitelist del microservicio.
+
+---
+
+### Utilidades
+
+---
+
+#### `g66 tokens` — Estadísticas de consumo de tokens IA
+
+```bash
+g66 tokens
+g66 tokens --last 20     # últimas 20 entradas
+g66 tokens --clear       # limpiar historial
+```
+
+Muestra tabla: comando | llamadas | tokens entrada | tokens salida | total.
+Historial en `~/.g66-tokens.jsonl`.
+
+---
+
+#### `g66 doctor` — Diagnóstico del entorno
+
+```bash
+g66 doctor
+```
+
+Verifica que todas las dependencias estén instaladas y configuradas.
+
+---
+
+#### `g66 init` — Configuración inicial
+
+```bash
+g66 init
+```
+
+Configura nombre del desarrollador y preferencias globales. Ejecutar una vez al instalar.
+
+---
+
+#### `g66 revert` — Revertir application.yml
+
+```bash
+g66 revert
+```
+
+Restaura `application-{env}.yml` a su versión en el repositorio.
+
+---
+
+## Setup del Workflow Builder de Slack
+
+Para que `g66 slack add` y `g66 pr-smart` puedan crear items en el tablero:
+
+### 1. Scopes del bot (api.slack.com/apps)
+
+```
+chat:write
+channels:history
+groups:read
+groups:history
+users:read
+incoming-webhook
+```
+
+### 2. Variables del trigger webhook
+
+| Nombre | Tipo |
+|---|---|
+| `title` | Texto |
+| `hu` | Texto |
+| `pr_url_dev` | URL |
+| `pr_url_ci` | URL |
+| `pr_url_prod` | URL |
+| `comments` | Texto |
+| `assignee_id` | Miembro |
+| `dev` | Miembro |
+
+### 3. Mapeo de campos en el paso "Agregar elemento a lista"
+
+| Campo tablero | Variable webhook |
+|---|---|
+| Summary | `title` |
+| Details | `comments` |
+| PR DEV | `pr_url_dev` |
+| PR CI | `pr_url_ci` |
+| PR PROD | `pr_url_prod` |
+| Assignee | `assignee_id` |
+| Dev | `dev` |
+| Status | `Sin Iniciar` (valor fijo) |
+
+### 4. Agregar el bot al canal privado
+
+Canal de devs → nombre del canal → Integraciones → Agregar apps → buscar el bot.
+
+---
+
+## Actualización semanal (viernes)
+
+```bash
+g66 slack users --refresh
+```
+
+Actualiza el cache de miembros del canal en `~/.g66-slack-members.json`.
+
+---
+
+## Flujo completo de una HU nueva
+
+```bash
+# 1. Crear rama desde la base actualizada
+g66 nb dev AT-120
+
+# 2. Desarrollar... (commits normales)
+
+# 3. Sincronizar configuración local para correr el servicio
+g66 config
+
+# 4. Si hay nuevas @Entity, generar migración Liquibase
+g66 migrate
+
+# 5. Subir PR con IA + tablero Slack + API Gateway
+g66 pr-smart
+
+# 6. Si hay nuevas @Value sin default, sincronizar properties
+g66 props
+
+# 7. Ver estado de la HU en todos los ambientes
+g66 env-status
+
+# 8. Cuando sea aprobado, homologar a CI
+g66 sync
+```
+
+---
+
+## Versión actual
+
+`1.7.7`

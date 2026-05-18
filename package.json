@@ -1,6 +1,6 @@
 {
   "name": "g66",
-  "version": "1.0.1",
+  "version": "1.7.7",
   "description": "CLI para sincronizar archivos de configuración por entorno en microservicios de Global66",
   "main": "src/index.ts",
   "bin": {

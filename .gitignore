@@ -37,3 +37,9 @@ coverage/
 
 # Others
 *.zip
+
+# Secrets — never commit
+logi/config.py
+vendor/apigw/apigw-apidoc.config.json
+__pycache__/
+logi/__pycache__/

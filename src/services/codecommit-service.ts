@@ -2,6 +2,8 @@ import {
   CodeCommitClient,
   CreatePullRequestCommand,
   CreatePullRequestCommandOutput,
+  GetPullRequestCommand,
+  GetPullRequestCommandOutput,
 } from '@aws-sdk/client-codecommit';
 import open from 'open';
 
@@ -66,4 +68,54 @@ export async function createSimplePullRequest(
     title,
     description: "", // sin descripción
   });
+}
+
+export interface PullRequestTargetMeta {
+  repositoryName: string;
+  sourceReference: string;
+  destinationReference: string;
+  sourceCommit: string;
+  destinationCommit: string;
+}
+
+export interface PullRequestDetails {
+  pullRequestId: string;
+  title: string;
+  status: string;
+  targets: PullRequestTargetMeta[];
+}
+
+export async function getPullRequestDetails(
+  pullRequestId: string,
+): Promise<PullRequestDetails> {
+  const command = new GetPullRequestCommand({ pullRequestId });
+  let result: GetPullRequestCommandOutput;
+  try {
+    result = await client.send(command);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`No se pudo leer el PR en CodeCommit: ${msg}`);
+  }
+
+  const pr = result.pullRequest;
+  if (!pr?.pullRequestId) {
+    throw new Error("Respuesta de CodeCommit sin datos del PR.");
+  }
+
+  const targets: PullRequestTargetMeta[] = (pr.pullRequestTargets ?? []).map(
+    (t) => ({
+      repositoryName: t.repositoryName ?? "",
+      sourceReference: t.sourceReference ?? "",
+      destinationReference: t.destinationReference ?? "",
+      sourceCommit: t.sourceCommit ?? "",
+      destinationCommit: t.destinationCommit ?? "",
+    }),
+  );
+
+  return {
+    pullRequestId: pr.pullRequestId,
+    title: pr.title ?? "",
+    status: pr.pullRequestStatus ?? "",
+    targets,
+  };
 }

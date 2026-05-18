@@ -15,13 +15,46 @@ import wl from "./commands/wl";
 import pr from "./commands/pr";
 import promote from "./commands/promote";
 import syncEnvs from "./commands/sync-envs";
+import prAnalyze from "./commands/pr-analyze";
+import token from "./commands/token";
+import company from "./commands/company";
+import status from "./commands/status";
+import prSmart from "./commands/pr-smart";
+import apigw from "./commands/apigw";
+import prReview from "./commands/pr-review";
+import setup from "./commands/setup";
+import hu from "./commands/hu";
+import start from "./commands/start";
+import test from "./commands/test";
+import liquibase from "./commands/liquibase";
+import doctor from "./commands/doctor";
+import release from "./commands/release";
+import props from "./commands/props";
+import contract from "./commands/contract";
+import hotfix from "./commands/hotfix";
+import migrate from "./commands/migrate";
+import summary from "./commands/summary";
+import tokens from "./commands/tokens";
+import envStatus from "./commands/env-status";
+import sync from "./commands/sync";
+import slack from "./commands/slack";
+import go from "./commands/go";
+import nb from "./commands/nb";
+import undo from "./commands/undo";
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { version: CLI_VERSION } = require("../package.json");
 const program = new Command();
 
 program
   .name("g66")
   .description("🛠️ CLI de herramientas para microservicios Global66")
-  .version("1.0.0");
+  .version(CLI_VERSION);
+
+program.hook("preAction", (_thisCommand, actionCommand) => {
+  const commandName = actionCommand.name();
+  console.log(chalk.cyan(`\n🚀 g66 v${CLI_VERSION} | comando: ${commandName}\n`));
+});
 
 program
   .command("init")
@@ -86,6 +119,32 @@ program
 program.addCommand(pr);
 program.addCommand(promote);
 program.addCommand(syncEnvs);
+program.addCommand(prAnalyze);
 program.addCommand(wl);
+program.addCommand(token);
+program.addCommand(company);
+program.addCommand(status);
+program.addCommand(prSmart);
+program.addCommand(apigw);
+program.addCommand(prReview);
+program.addCommand(setup);
+program.addCommand(hu);
+program.addCommand(start);
+program.addCommand(test);
+program.addCommand(liquibase);
+program.addCommand(doctor);
+program.addCommand(release);
+program.addCommand(props);
+program.addCommand(contract);
+program.addCommand(hotfix);
+program.addCommand(migrate);
+program.addCommand(summary);
+program.addCommand(tokens);
+program.addCommand(envStatus);
+program.addCommand(sync);
+program.addCommand(slack);
+program.addCommand(go);
+program.addCommand(nb);
+program.addCommand(undo);
 
 program.parse(process.argv);

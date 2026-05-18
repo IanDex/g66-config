@@ -1,0 +1,10 @@
+{
+  "configRepo": "%USERPROFILE%\\Documents\\ms-g66\\ms-config-api-gateway",
+  "profile": "",
+  "region": "us-east-1",
+  "jiraBaseUrl": "https://global66.atlassian.net/browse",
+  "apiNamePattern": "MS-{Service}-Public-{ENV}",
+  "owners": {
+    "cv": "Cristian Huerfano"
+  }
+}
