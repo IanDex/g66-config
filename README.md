@@ -55,16 +55,14 @@ g66 --version
 }
 ```
 
-### Cómo obtener cada valor
+> Los valores de `token`, `dev_channel`, `webhook_url` y `excluded_users` son compartidos por el TL del equipo.
+> Solo debes configurar `branch_prefix` (tus iniciales) y `my_user_id` (tu Slack user ID).
 
-| Campo | Cómo obtenerlo |
-|---|---|
-| `branch_prefix` | Tus iniciales (ej: `cv`). Se pide automáticamente en `g66 nb`. |
-| `slack.token` | [api.slack.com/apps](https://api.slack.com/apps) → tu app → OAuth & Permissions → Bot Token |
-| `slack.dev_channel` | ID del canal privado de devs (empieza con C) |
-| `slack.webhook_url` | Workflow Builder → trigger "Se inicia con un webhook" → copiar URL |
-| `slack.my_user_id` | Slack → Perfil → ⋮ → "Copiar ID de miembro" (empieza con U) |
-| `slack.excluded_users` | IDs de usuarios a ocultar en `g66 slack users` |
+### Cómo obtener tu `my_user_id`
+
+En Slack: click en tu foto de perfil → **Perfil** → ⋮ → **Copiar ID de miembro** (empieza con `U`).
+
+O simplemente correr `g66 slack add` — te lo pedirá automáticamente la primera vez.
 
 ---
 
