@@ -41,6 +41,7 @@ import slack from "./commands/slack";
 import go from "./commands/go";
 import nb from "./commands/nb";
 import undo from "./commands/undo";
+import push from "./commands/push";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { version: CLI_VERSION } = require("../package.json");
@@ -146,5 +147,6 @@ program.addCommand(slack);
 program.addCommand(go);
 program.addCommand(nb);
 program.addCommand(undo);
+program.addCommand(push);
 
 program.parse(process.argv);

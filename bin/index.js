@@ -44,6 +44,7 @@ const slack_1 = __importDefault(require("./commands/slack"));
 const go_1 = __importDefault(require("./commands/go"));
 const nb_1 = __importDefault(require("./commands/nb"));
 const undo_1 = __importDefault(require("./commands/undo"));
+const push_1 = __importDefault(require("./commands/push"));
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { version: CLI_VERSION } = require("../package.json");
 const program = new commander_1.Command();
@@ -134,4 +135,5 @@ program.addCommand(slack_1.default);
 program.addCommand(go_1.default);
 program.addCommand(nb_1.default);
 program.addCommand(undo_1.default);
+program.addCommand(push_1.default);
 program.parse(process.argv);
